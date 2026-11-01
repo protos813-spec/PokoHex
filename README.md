@@ -9,6 +9,8 @@ Edits savedata dumped from the Nintendo Switch 2.
 
 * Bring your own save file data; this program does not dump it from your console.
 
+This fork does not include the new map editing feature from the original creator. This is created so you don't have to make new folders when exporting and creates it's own backups.
+
 ## Builds
 
 **Windows**: Download `PokoHex-win-x64.zip` from the [Releases](https://github.com/berichan/PokoHex/releases), extract it, and run `PokoHex.exe`.
