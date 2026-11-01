@@ -15,6 +15,11 @@ Edits savedata dumped from the Nintendo Switch 2.
 
 **All Platforms/Browser**: Use this repository's GitHub Pages, click here -> [PokoHex.Web](https://berichan.github.io/PokoHex/)
 
+## Saving
+
+- **File → Save (Ctrl+S)** writes your edits back to the save folder you opened. Before it writes, it copies the whole folder to `Documents\PokoHex Backups\<timestamp>`, and afterwards it re-reads the file to check it.
+- **File → Export save copy (Ctrl+Shift+S)** writes the edited save to a new, empty folder and leaves the original untouched.
+
 ## Other
 
 Based on the style of [NHSE](https://github.com/kwsch/NHSE)
