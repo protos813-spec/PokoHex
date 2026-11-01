@@ -61,6 +61,7 @@ public partial class Main : Form
             InventoryStart = 0;
             TC_Editor.Enabled = true;
             Menu_Export.Enabled = true;
+            Menu_SaveInPlace.Enabled = true;
             SelectedSlot = 0;
             Loading = false;
             BindItems();
@@ -286,6 +287,30 @@ public partial class Main : Form
             MessageBox.Show(this, "The edited save was exported and verified.", "PokoHex", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or InvalidOperationException)
+        {
+            ShowError(ex.Message);
+        }
+    }
+
+    private void Menu_SaveInPlace_Click(object sender, EventArgs e)
+    {
+        if (SAV == null)
+            return;
+        try
+        {
+            ValidateChildren();
+            SaveSlot();
+            if (TB_Name.Text != SAV.Common.PlayerName)
+                SAV.Common.PlayerName = TB_Name.Text;
+            var folder = SAV.Folder;
+            var backupRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PokoHex Backups");
+            var backup = SAV.SaveInPlace(backupRoot);
+            SAV = SaveFolder.Read(folder);
+            Text = $"PokoHex / {Path.GetFileName(SAV.Folder)}";
+            LoadSlot();
+            L_Status.Text = $"Saved and verified. Backup: {backup}";
+        }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or ArgumentException or InvalidOperationException or UnauthorizedAccessException)
         {
             ShowError(ex.Message);
         }

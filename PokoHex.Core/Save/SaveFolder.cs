@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -117,5 +117,29 @@ public sealed class SaveFolder
         foreach (var (relative, original) in Files)
             result.Add(relative, edited.TryGetValue(relative, out var data) ? data : (byte[])original.Clone());
         return result;
+    }
+
+    public string SaveInPlace(string backupRoot)
+    {
+        var common = Common.Write();
+        var check = SaveFile.Read(common);
+        if (!check.Data.AsSpan().SequenceEqual(Common.Data))
+            throw new InvalidDataException("The edited save could not be verified.");
+
+        var backup = Path.Combine(backupRoot, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+        foreach (var file in Directory.EnumerateFiles(Folder, "*", SearchOption.AllDirectories))
+        {
+            var target = Path.Combine(backup, Path.GetRelativePath(Folder, file));
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
+        }
+
+        var commonPath = Path.Combine(Folder, "G00", "CMNDAT.BIN");
+        var temp = commonPath + ".tmp";
+        File.WriteAllBytes(temp, common);
+        File.Move(temp, commonPath, overwrite: true);
+        if (!File.ReadAllBytes(commonPath).AsSpan().SequenceEqual(common))
+            throw new IOException("The saved file did not match what was written. Restore from: " + backup);
+        return backup;
     }
 }

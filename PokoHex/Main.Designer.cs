@@ -23,7 +23,8 @@ partial class Main
         var language = new ToolStripLabel("Language:");
         Menu_Language = new ToolStripComboBox();
         var open = new ToolStripMenuItem("&Open save folder...", null, Menu_Open_Click, Keys.Control | Keys.O);
-        Menu_Export = new ToolStripMenuItem("&Export save copy...", null, Menu_Export_Click, Keys.Control | Keys.S);
+        Menu_Export = new ToolStripMenuItem("&Export save copy...", null, Menu_Export_Click, Keys.Control | Keys.Shift | Keys.S);
+        Menu_SaveInPlace = new ToolStripMenuItem("&Save", null, Menu_SaveInPlace_Click, Keys.Control | Keys.S);
         var exit = new ToolStripMenuItem("E&xit", null, Menu_Exit_Click);
         var status = new StatusStrip();
         L_Status = new ToolStripStatusLabel();
@@ -60,8 +61,9 @@ partial class Main
         Menu_Language.Items.AddRange(["English", "日本語", "Deutsch", "Español", "Français", "Italiano", "한국어", "简体中文", "繁體中文"]);
         Menu_Language.Size = new Size(130, 23);
         Menu_Language.SelectedIndexChanged += Menu_Language_SelectedIndexChanged;
-        file.DropDownItems.AddRange([open, Menu_Export, new ToolStripSeparator(), exit]);
+        file.DropDownItems.AddRange([open, Menu_SaveInPlace, Menu_Export, new ToolStripSeparator(), exit]);
         Menu_Export.Enabled = false;
+        Menu_SaveInPlace.Enabled = false;
         status.Items.Add(L_Status);
         L_Status.Text = "Open a save folder to begin.";
         TC_Editor.Dock = DockStyle.Fill;
@@ -157,7 +159,7 @@ partial class Main
         hint.Location = new Point(16, 296);
         hint.Size = new Size(352, 100);
         hint.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-        hint.Text = "Type an item name to search.\r\n\r\nSet applies the selected item and amount.\r\nZero clears the slot.\r\n\r\nExport saves your changes to a new folder.";
+        hint.Text = "Type an item name to search.\r\n\r\nSet applies the selected item and amount.\r\nZero clears the slot.\r\n\r\nSave (Ctrl+S) writes your changes to the opened save and keeps a backup. Export saves them to a new folder.";
         split.Panel2.Controls.AddRange([L_Slot, itemLabel, CB_Item, amount, NUD_Count, B_Set, clear, L_Catalog, hint]);
         items.Controls.Add(split);
         Controls.Add(TC_Editor);
@@ -179,6 +181,7 @@ partial class Main
     }
 
     private ToolStripMenuItem Menu_Export = null!;
+    private ToolStripMenuItem Menu_SaveInPlace = null!;
     private ToolStripComboBox Menu_Language = null!;
     private ToolStripStatusLabel L_Status = null!;
     private TabControl TC_Editor = null!;
