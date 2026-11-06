@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -121,10 +121,9 @@ public sealed class SaveFolder
 
     public string SaveInPlace(string backupRoot)
     {
-        var common = Common.Write();
-        var check = SaveFile.Read(common);
-        if (!check.Data.AsSpan().SequenceEqual(Common.Data))
-            throw new InvalidDataException("The edited save could not be verified.");
+        if (Folder.Length == 0)
+            throw new InvalidOperationException("This save was not opened from a folder.");
+        var files = ExportFiles();
 
         var backup = Path.Combine(backupRoot, DateTime.Now.ToString("yyyyMMdd_HHmmss"));
         foreach (var file in Directory.EnumerateFiles(Folder, "*", SearchOption.AllDirectories))
@@ -134,12 +133,17 @@ public sealed class SaveFolder
             File.Copy(file, target);
         }
 
-        var commonPath = Path.Combine(Folder, "G00", "CMNDAT.BIN");
-        var temp = commonPath + ".tmp";
-        File.WriteAllBytes(temp, common);
-        File.Move(temp, commonPath, overwrite: true);
-        if (!File.ReadAllBytes(commonPath).AsSpan().SequenceEqual(common))
-            throw new IOException("The saved file did not match what was written. Restore from: " + backup);
+        foreach (var (relative, data) in files)
+        {
+            if (Files.TryGetValue(relative, out var original) && original.AsSpan().SequenceEqual(data))
+                continue;
+            var path = Path.Combine(Folder, relative);
+            var temp = path + ".tmp";
+            File.WriteAllBytes(temp, data);
+            File.Move(temp, path, overwrite: true);
+            if (!File.ReadAllBytes(path).AsSpan().SequenceEqual(data))
+                throw new IOException("A saved file did not match what was written. Restore from: " + backup);
+        }
         return backup;
     }
 }
