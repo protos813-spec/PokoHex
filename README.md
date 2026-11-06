@@ -1,26 +1,41 @@
-PokoHex
+PokoHex (fork)
 =====
 
 ![License](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-Proof of Concept Save Editor for Pokopia (Poko a Pokemon)
+Fork of [berichan/PokoHex](https://github.com/berichan/PokoHex), a proof of concept save editor for Pokopia (Poko a Pokemon).
 
 Edits savedata dumped from the Nintendo Switch 2.
 
 * Bring your own save file data; this program does not dump it from your console.
 
-This fork does not include the new map editing feature from the original creator. This is created so you don't have to make new folders when exporting and creates it's own backups.
+## What this fork adds
 
-## Builds
+* **File → Save (Ctrl+S)** writes your edits back to the save folder you opened, so you don't need a new empty folder for every export.
+  * Before writing, it copies the whole save folder to `Documents\PokoHex Backups\<timestamp>`.
+  * Each file is written through a temporary file and re-read afterwards to check it matches.
+  * It writes every edited file, including the player data and any edited map stages.
+* **File → Export save copy (Ctrl+Shift+S)** still works as before: it writes the edited save to a new, empty folder and leaves the original untouched.
+* Based on upstream PokoHex 0.2.1, which includes the Player (Skills and Reactions), Items, Villagers and Map editors.
 
-**Windows**: Download `PokoHex-win-x64.zip` from the [Releases](https://github.com/berichan/PokoHex/releases), extract it, and run `PokoHex.exe`.
+Close the game (or go back to the title screen) before saving over a save that an emulator is using. If the file is locked, PokoHex shows an error and changes nothing.
 
-**All Platforms/Browser**: Use this repository's GitHub Pages, click here -> [PokoHex.Web](https://berichan.github.io/PokoHex/)
+## Building from source
 
-## Saving
+Requires the .NET 10 SDK.
 
-- **File → Save (Ctrl+S)** writes your edits back to the save folder you opened. Before it writes, it copies the whole folder to `Documents\PokoHex Backups\<timestamp>`, and afterwards it re-reads the file to check it.
-- **File → Export save copy (Ctrl+Shift+S)** writes the edited save to a new, empty folder and leaves the original untouched.
+    git clone https://github.com/protos813-spec/PokoHex.git
+    cd PokoHex
+    dotnet build PokoHex.slnx -c Release
+    dotnet publish PokoHex -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o out
+
+The editor is then `out\PokoHex.exe`.
+
+## Upstream
+
+**Windows**: Download `PokoHex-win-x64.zip` from the [upstream Releases](https://github.com/berichan/PokoHex/releases), extract it, and run `PokoHex.exe`.
+
+**All Platforms/Browser**: Use the upstream GitHub Pages, click here -> [PokoHex.Web](https://berichan.github.io/PokoHex/)
 
 ## Other
 
