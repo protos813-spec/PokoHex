@@ -18,6 +18,7 @@ public sealed class SaveFile
     public Item[] Inventory { get; }
     public Villager[] Villagers { get; }
     public PlayerAbilities? Abilities { get; }
+    public FunctionFlags? Flags { get; }
     public bool IsEdited => !Data.AsSpan().SequenceEqual(OriginalData);
 
     private SaveFile(byte[] original, byte[] data, SaveLayout layout)
@@ -31,8 +32,25 @@ public sealed class SaveFile
         Villagers = Enumerable.Range(0, layout.VillagerCount)
             .Select(i => new Villager(i, Data.AsMemory(i * Villager.SIZE, Villager.SIZE),
                 Data.AsMemory(layout.VillagerHomeOffset + (i * VillagerHome.SIZE), VillagerHome.SIZE))).ToArray();
+        if (layout.FunctionFlagsOffset != 0)
+            Flags = new FunctionFlags(Data.AsMemory(layout.FunctionFlagsOffset, FunctionFlags.SIZE));
         if (layout.PlayerAbilitiesOffset != 0)
-            Abilities = new PlayerAbilities(Data.AsMemory(layout.PlayerAbilitiesOffset, PlayerAbilities.SIZE));
+            Abilities = new PlayerAbilities(Data.AsMemory(layout.PlayerAbilitiesOffset, PlayerAbilities.SIZE),
+                Data.AsMemory(layout.FunctionFlagsOffset, FunctionFlags.SIZE));
+    }
+
+    public bool LifeCoinsEditable => Layout.LifeCoinsOffset != 0;
+
+    public int LifeCoins
+    {
+        get => LifeCoinsEditable ? ReadInt32LittleEndian(Data.AsSpan(Layout.LifeCoinsOffset)) : 0;
+        set
+        {
+            if (!LifeCoinsEditable)
+                throw new InvalidOperationException("Life Coin editing is not available.");
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            WriteInt32LittleEndian(Data.AsSpan(Layout.LifeCoinsOffset), value);
+        }
     }
 
     public string PlayerName

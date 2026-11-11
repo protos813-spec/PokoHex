@@ -13,17 +13,23 @@ namespace PokoHex.Web;
 
 public partial class Main : IAsyncDisposable
 {
-    private static readonly string[] Tabs = ["Player", "Items", "Villagers", "Map"];
+    private static readonly string[] Tabs = ["Player", "Items", "Villagers", "Map", "Flags"];
     private static readonly string[] LanguageNames = ["English", "日本語", "Deutsch", "Español", "Français", "Italiano", "한국어", "简体中文", "繁體中文"];
     private SaveFolder? SAV;
     private InventoryEditor? Editor_Items;
     private VillagerEditor? Editor_Villagers;
     private MapEditor? Editor_Map;
+    private FlagEditor? Editor_Flags;
+    private AbilityEditor? Editor_Skills;
+    private AbilityEditor? Editor_Reactions;
     private ElementReference EditorWindow;
     private DotNetObjectReference<Main>? DropReference;
     private string PlayerName = string.Empty;
+    private int lifeCoins;
+    private int LifeCoins { get => lifeCoins; set => lifeCoins = Math.Max(0, value); }
     private string SaveName = string.Empty;
     private string SelectedTab = "Player";
+    private string PlayerSection = "Skills";
     private string Status = "Open or drop a save folder or ZIP to begin.";
     private string Error = string.Empty;
     private int Language;
@@ -31,12 +37,14 @@ public partial class Main : IAsyncDisposable
     private bool MapOpened;
     private bool? BrowserDirty;
     private RenderState? LastRender;
-    private readonly record struct RenderState(SaveFolder? Save, string Name, string SaveName, string Tab,
+    private readonly record struct RenderState(SaveFolder? Save, string Name, string SaveName, string Tab, string PlayerSection,
         string Status, string Error, int Language, bool Busy, bool MapOpened, bool Dirty);
     private bool HasChanges => SAV != null && (PlayerName != SAV.Common.PlayerName ||
-        Editor_Items?.HasChanges == true || Editor_Villagers?.HasChanges == true || Editor_Map?.HasChanges == true || SAV.IsEdited);
+        SAV.Common.LifeCoinsEditable && LifeCoins != SAV.Common.LifeCoins ||
+        Editor_Items?.HasChanges == true || Editor_Villagers?.HasChanges == true || Editor_Map?.HasChanges == true ||
+        Editor_Skills?.HasChanges == true || Editor_Reactions?.HasChanges == true || Editor_Flags?.HasChanges == true || SAV.IsEdited);
 
-    private RenderState GetRenderState() => new(SAV, PlayerName, SaveName, SelectedTab, Status, Error, Language, Busy, MapOpened, HasChanges);
+    private RenderState GetRenderState() => new(SAV, PlayerName, SaveName, SelectedTab, PlayerSection, Status, Error, Language, Busy, MapOpened, HasChanges);
     protected override bool ShouldRender() => LastRender != GetRenderState();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -111,11 +119,16 @@ public partial class Main : IAsyncDisposable
         SAV = save;
         SaveName = name;
         PlayerName = save.Common.PlayerName;
+        LifeCoins = save.Common.LifeCoins;
         Editor_Items = null;
         Editor_Villagers = null;
         Editor_Map = null;
+        Editor_Skills = null;
+        Editor_Reactions = null;
+        Editor_Flags = null;
         MapOpened = false;
         SelectedTab = "Player";
+        PlayerSection = "Skills";
         Status = $"Loaded: {PlayerName}.";
     }
 
@@ -131,9 +144,14 @@ public partial class Main : IAsyncDisposable
                 var check = SaveFile.Read(SAV.Common.Write());
                 check.PlayerName = PlayerName;
             }
+            if (SAV.Common.LifeCoinsEditable && LifeCoins != SAV.Common.LifeCoins)
+                SAV.Common.LifeCoins = LifeCoins;
             Editor_Map?.SaveChanges();
             Editor_Items?.SaveChanges();
             Editor_Villagers?.SaveChanges();
+            Editor_Skills?.SaveChanges();
+            Editor_Reactions?.SaveChanges();
+            Editor_Flags?.SaveChanges();
             if (PlayerName != SAV.Common.PlayerName)
                 SAV.Common.PlayerName = PlayerName;
             var files = SAV.ExportFiles();
@@ -141,8 +159,10 @@ public partial class Main : IAsyncDisposable
             using var reference = new DotNetStreamReference(output);
             await JS.InvokeVoidAsync("pokohex.download", "PokoHex-edited.zip", reference);
             var tab = SelectedTab;
+            var section = PlayerSection;
             LoadSave(SaveFolder.ReadFiles(files), SaveName);
             SelectedTab = tab;
+            PlayerSection = section;
             MapOpened = tab == "Map";
             Status = "Exported and verified: PokoHex-edited.zip.";
         });
@@ -150,8 +170,13 @@ public partial class Main : IAsyncDisposable
 
     private void SelectTab(string tab)
     {
-        SelectedTab = tab;
-        MapOpened |= tab == "Map";
+        try
+        {
+            Editor_Flags?.SaveChanges();
+            SelectedTab = tab;
+            MapOpened |= tab == "Map";
+        }
+        catch (ArgumentException ex) { ShowError(ex.Message); }
     }
 
     private void Menu_Language_Changed(ChangeEventArgs e)
